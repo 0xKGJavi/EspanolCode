@@ -121,7 +121,125 @@ fn es_palabra_reservada(nombre: &str) -> bool {
             | "repetir"
             | "veces"
             | "funcion"
+            | "importar"
+            | "desde"
+            | "como"
     )
+}
+
+fn es_ruta_modulo(nombre: &str) -> bool {
+    let ruta = nombre.trim_start_matches('.');
+    if ruta.is_empty() {
+        return nombre.starts_with('.');
+    }
+    ruta.split('.').all(es_identificador)
+}
+
+fn validar_elementos_importados(
+    numero_linea: usize,
+    elementos: &str,
+    permitir_asterisco: bool,
+    permitir_ruta: bool,
+    permitir_parentesis: bool,
+) -> Result<(), String> {
+    let elementos = elementos.trim();
+    let con_parentesis = elementos.starts_with('(') || elementos.ends_with(')');
+    if con_parentesis && !permitir_parentesis {
+        return Err(format!(
+            "Línea {numero_linea}: no uses paréntesis en esta importación."
+        ));
+    }
+    let elementos = if permitir_parentesis {
+        elementos
+            .strip_prefix('(')
+            .and_then(|texto| texto.strip_suffix(')'))
+            .unwrap_or(elementos)
+            .trim()
+    } else {
+        elementos
+    };
+    if elementos.is_empty() {
+        return Err(format!(
+            "Línea {numero_linea}: escribe el módulo o los nombres que quieres importar."
+        ));
+    }
+
+    let partes = elementos.split(',').map(str::trim).collect::<Vec<_>>();
+    if partes.iter().any(|parte| parte.is_empty()) {
+        return Err(format!(
+            "Línea {numero_linea}: separa los elementos importados con comas y no dejes elementos vacíos."
+        ));
+    }
+    if partes.iter().any(|parte| *parte == "*") {
+        if !permitir_asterisco || partes.len() != 1 {
+            return Err(format!(
+                "Línea {numero_linea}: usa '*' solo y después de 'desde módulo importar'."
+            ));
+        }
+        return Ok(());
+    }
+
+    for parte in partes {
+        let mut secciones = parte.split(" como ");
+        let nombre = secciones.next().unwrap_or_default().trim();
+        let alias = secciones.next().map(str::trim);
+        if secciones.next().is_some() {
+            return Err(format!(
+                "Línea {numero_linea}: usa 'como' una sola vez para cambiar el nombre importado."
+            ));
+        }
+        let nombre_valido = if permitir_ruta {
+            !nombre.starts_with('.') && es_ruta_modulo(nombre)
+        } else {
+            es_identificador(nombre)
+        };
+        if !nombre_valido {
+            return Err(format!(
+                "Línea {numero_linea}: revisa el nombre del módulo o elemento que quieres importar."
+            ));
+        }
+        if let Some(alias) = alias {
+            if !es_identificador(alias) || es_palabra_reservada(alias) {
+                return Err(format!(
+                    "Línea {numero_linea}: el nombre escrito después de 'como' no es válido."
+                ));
+            }
+        }
+        if !permitir_ruta && alias.is_none() && es_palabra_reservada(nombre) {
+            return Err(format!(
+                "Línea {numero_linea}: no puedes importar directamente una palabra reservada."
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validar_importacion(numero_linea: usize, instruccion: &str) -> Result<bool, String> {
+    if let Some(resto) = instruccion.strip_prefix("importar") {
+        if !resto.is_empty() && !resto.starts_with(char::is_whitespace) {
+            return Ok(false);
+        }
+        validar_elementos_importados(numero_linea, resto, false, true, false)?;
+        return Ok(true);
+    }
+
+    let Some(resto) = instruccion.strip_prefix("desde") else {
+        return Ok(false);
+    };
+    if !resto.is_empty() && !resto.starts_with(char::is_whitespace) {
+        return Ok(false);
+    }
+    let mut partes = resto.split_whitespace();
+    let modulo = partes.next().unwrap_or_default();
+    let palabra_importar = partes.next().unwrap_or_default();
+    let elementos = partes.collect::<Vec<_>>().join(" ");
+    if !es_ruta_modulo(modulo) || palabra_importar != "importar" {
+        return Err(format!(
+            "Línea {numero_linea}: usa 'desde módulo importar nombre'."
+        ));
+    }
+    validar_elementos_importados(numero_linea, &elementos, true, false, true)?;
+    Ok(true)
 }
 
 fn es_funcion_integrada(nombre: &str) -> bool {
@@ -758,6 +876,13 @@ fn ejecutar_linea(
     // Algunos editores de Windows guardan un marcador invisible al inicio del archivo.
     let instruccion = linea.trim().trim_start_matches('\u{feff}');
     if instruccion.is_empty() {
+        return Ok(());
+    }
+
+    if validar_importacion(numero_linea, instruccion)? {
+        eprintln!(
+            "Aviso línea {numero_linea}: se reconoce la importación, pero EspañolCode todavía no carga módulos ni sus funciones."
+        );
         return Ok(());
     }
 
@@ -1450,7 +1575,7 @@ fn iniciar_consola() -> Result<(), String> {
 }
 
 fn ayuda() {
-    println!("EspañolCode {VERSION}\n\nUso:\n  espanolcode              Abre la consola interactiva\n  espanolcode --bloques    Abre el editor visual estilo Scratch\n  espanolcode archivo.esp  Ejecuta un programa\n  espanolcode --ayuda      Muestra esta ayuda\n\nInstrucciones disponibles:\n  decir expresión          Muestra texto, números o variables\n  guardar nombre = valor  Crea o cambia una variable\n  guardar x = preguntar \"?\"  Pregunta y guarda la respuesta\n  agregar lista = valor  Añade un elemento a la lista\n  cantidad(lista)         Cuenta elementos de una lista o texto\n  absoluto(n), redondear(n)  Funciones matemáticas sencillas\n  minimo(lista), maximo(lista)  Busca el menor o mayor número\n  texto(valor), numero(texto)  Convierte entre texto y número\n  leer_archivo(ruta)      Lee un archivo de texto\n  escribir_archivo(ruta, texto)  Crea o reemplaza un archivo\n  agregar_archivo(ruta, texto)   Añade texto al final\n  funcion doble(n) = n * 2  Define una función que devuelve su resultado\n  funcion area(a, b)       Define una función con un bloque indentado\n  devolver expresión       Devuelve el resultado dentro de una función\n\nListas: [\"Ana\", \"Luis\"], índices desde 0\nOperaciones: + - * / y paréntesis\nCondiciones de archivos: si comparación / si no; indenta sus bloques\nRepeticiones de archivos: repetir N veces; máximo 100000");
+    println!("EspañolCode {VERSION}\n\nUso:\n  espanolcode              Abre la consola interactiva\n  espanolcode --bloques    Abre el editor visual estilo Scratch\n  espanolcode archivo.esp  Ejecuta un programa\n  espanolcode --ayuda      Muestra esta ayuda\n\nInstrucciones disponibles:\n  decir expresión          Muestra texto, números o variables\n  guardar nombre = valor  Crea o cambia una variable\n  guardar x = preguntar \"?\"  Pregunta y guarda la respuesta\n  agregar lista = valor  Añade un elemento a la lista\n  importar módulo         Reconoce una importación (todavía no carga módulos)\n  desde módulo importar nombre  Reconoce una importación selectiva\n  cantidad(lista)         Cuenta elementos de una lista o texto\n  absoluto(n), redondear(n)  Funciones matemáticas sencillas\n  minimo(lista), maximo(lista)  Busca el menor o mayor número\n  texto(valor), numero(texto)  Convierte entre texto y número\n  leer_archivo(ruta)      Lee un archivo de texto\n  escribir_archivo(ruta, texto)  Crea o reemplaza un archivo\n  agregar_archivo(ruta, texto)   Añade texto al final\n  funcion doble(n) = n * 2  Define una función que devuelve su resultado\n  funcion area(a, b)       Define una función con un bloque indentado\n  devolver expresión       Devuelve el resultado dentro de una función\n\nListas: [\"Ana\", \"Luis\"], índices desde 0\nOperaciones: + - * / y paréntesis\nCondiciones de archivos: si comparación / si no; indenta sus bloques\nRepeticiones de archivos: repetir N veces; máximo 100000");
 }
 
 fn json_cadena(texto: &str) -> String {
@@ -1757,7 +1882,45 @@ fn main() {
 
 #[cfg(test)]
 mod pruebas {
-    use super::host_permitido;
+    use super::{host_permitido, validar_importacion};
+
+    #[test]
+    fn reconoce_formas_de_importacion() {
+        for instruccion in [
+            "importar math",
+            "importar math como matematicas, random",
+            "desde math importar sqrt como raiz",
+            "desde .utilidades importar ayuda",
+            "desde paquete.subpaquete importar (uno, dos)",
+            "desde math importar *",
+        ] {
+            assert_eq!(
+                validar_importacion(1, instruccion),
+                Ok(true),
+                "{instruccion}"
+            );
+        }
+    }
+
+    #[test]
+    fn rechaza_importaciones_mal_formadas() {
+        for instruccion in [
+            "importar",
+            "importar math,",
+            "importar .math",
+            "importar (math)",
+            "desde importar raiz",
+            "desde math importa raiz",
+            "desde math importar raiz,",
+            "desde math importar *, raiz",
+            "desde math importar raiz como",
+        ] {
+            assert!(
+                validar_importacion(7, instruccion).is_err(),
+                "{instruccion}"
+            );
+        }
+    }
 
     #[test]
     fn acepta_el_propio_ordenador_con_su_puerto() {
