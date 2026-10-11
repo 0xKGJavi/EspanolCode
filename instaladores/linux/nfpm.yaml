@@ -1,0 +1,30 @@
+# Paquetes de EspañolCode para Linux: .deb (Ubuntu, Debian, Mint) y .rpm (Fedora).
+# Los fabrica GitHub Actions (.github/workflows/instaladores.yml). A mano, desde la raíz:
+#   cargo build --release --target x86_64-unknown-linux-musl
+#   VERSION=0.12.0 nfpm package -f instaladores/linux/nfpm.yaml -p deb -t dist/
+#   VERSION=0.12.0 nfpm package -f instaladores/linux/nfpm.yaml -p rpm -t dist/
+name: espanolcode
+arch: amd64
+platform: linux
+version: ${VERSION}
+section: devel
+priority: optional
+maintainer: 0xKGJavi
+homepage: https://github.com/0xKGJavi/EspanolCode
+description: |
+  Lenguaje de programación sencillo en español.
+  Escribe instrucciones como decir "Hola" en archivos .esp y ejecútalas
+  con el comando espanolcode.
+contents:
+  - src: target/x86_64-unknown-linux-musl/release/espanolcode
+    dst: /usr/bin/espanolcode
+    file_info:
+      mode: 0755
+  - src: README.md
+    dst: /usr/share/doc/espanolcode/README.md
+    file_info:
+      mode: 0644
+  - src: ejemplos/
+    dst: /usr/share/doc/espanolcode/ejemplos/
+    file_info:
+      mode: 0644

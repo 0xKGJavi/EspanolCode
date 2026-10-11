@@ -23,7 +23,7 @@
     },
     "keywords": {
       "name": "keyword.control.espanolcode",
-      "match": "\\b(?:decir|guardar|preguntar|agregar|si|no|repetir|veces|funcion|devolver|verdadero|falso)\\b"
+      "match": "\\b(?:decir|guardar|preguntar|agregar|si|no|repetir|veces|funcion|devolver|verdadero|falso|importar|desde|como)\\b"
     },
     "functions": {
       "name": "entity.name.function.espanolcode",

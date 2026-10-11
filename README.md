@@ -145,6 +145,20 @@ decir cantidad(nombres)
 
 También puedes usar listas vacías, listas dentro de listas y unir listas con `+`. Prueba `espanolcode ejemplos/listas.esp`.
 
+## Importaciones de módulos
+
+EspañolCode reconoce la sintaxis española para las formas habituales de importación:
+
+```text
+importar math como matematicas
+importar random, statistics
+desde math importar sqrt como raiz
+desde paquete.subpaquete importar (una, dos)
+desde .utilidades importar ayuda
+```
+
+Puedes escribir nombres de módulos y elementos en español o conservar los nombres habituales de Python; `como` permite indicar un alias en cada importación. Por ahora no hay un catálogo que traduzca automáticamente los nombres de todos los módulos estándar. Se valida únicamente la sintaxis: EspañolCode no carga módulos de Python ni hace disponibles sus funciones o nombres importados. Al ejecutar una importación muestra un aviso para dejar clara esta limitación. Esto no requiere instalar Python.
+
 ## Leer y escribir archivos de texto
 
 `leer_archivo(ruta)` lee el texto de un archivo. `escribir_archivo(ruta, texto)` crea o reemplaza un archivo; `agregar_archivo(ruta, texto)` añade texto al final.
@@ -237,9 +251,9 @@ La extensión también lleva el logotipo, reconoce variables, preguntas, condici
 - Listas con `[...]`, índices como `nombres[0]`, `agregar` y `cantidad(...)`.
 - `leer_archivo`, `escribir_archivo` y `agregar_archivo` — lectura y escritura sencilla de texto.
 - `funcion nombre(parámetros) = expresión` o funciones por bloques con variables locales, `devolver`, `si`/`si no` y `repetir`.
+- `importar` y `desde ... importar ...` — reconocen la sintaxis de imports, pero todavía no cargan los módulos ni sus funciones.
 - Funciones útiles: `cantidad`, `absoluto`, `redondear`, `minimo`, `maximo`, `texto` y `numero`.
 - `espanolcode --bloques` — abre el editor visual de piezas; permite arrastrar, descargar `.esp` y ejecutar.
 - Siguiente: funciones anidadas y ampliar los bloques visuales; no incluye los sprites, disfraces ni audio de Scratch.
 
 Esto no copia todas las bibliotecas especializadas de Python; traduce gradualmente las ideas comunes para principiantes.
-

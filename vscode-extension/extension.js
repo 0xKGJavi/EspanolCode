@@ -164,6 +164,53 @@ function analizarCondicion(expresion, funciones = new Map()) {
   return null;
 }
 
+function validarImportacion(texto) {
+  const esIdentificador = (nombre) => /^[\p{L}_][\p{L}\p{N}_]*$/u.test(nombre);
+  const esRutaModulo = (nombre, permitirRelativo = false) => {
+    const ruta = nombre.replace(/^\.+/u, '');
+    return ruta
+      ? (permitirRelativo || !nombre.startsWith('.')) && ruta.split('.').every(esIdentificador)
+      : permitirRelativo && /^\.+$/u.test(nombre);
+  };
+  const validarLista = (lista, permitirAsterisco, permitirRutas, permitirParentesis) => {
+    let elementos = lista.trim();
+    const abreParentesis = elementos.startsWith('(');
+    const cierraParentesis = elementos.endsWith(')');
+    if ((abreParentesis || cierraParentesis) && !permitirParentesis) return false;
+    if (abreParentesis !== cierraParentesis) return false;
+    if (abreParentesis) elementos = elementos.slice(1, -1).trim();
+    if (!elementos) return false;
+
+    const partes = elementos.split(',').map((parte) => parte.trim());
+    if (partes.some((parte) => !parte)) return false;
+    if (partes.includes('*')) return permitirAsterisco && partes.length === 1;
+    const reservadasImportacion = new Set(['importar', 'desde', 'como']);
+    return partes.every((parte) => {
+      const nombres = parte.split(/\s+como\s+/u);
+      if (nombres.length > 2) return false;
+      const nombre = nombres[0].trim();
+      const alias = nombres[1] && nombres[1].trim();
+      const valido = permitirRutas ? esRutaModulo(nombre) : esIdentificador(nombre);
+      return valido && (!nombres[1] || (esIdentificador(alias) && !reservadasImportacion.has(alias)));
+    });
+  };
+
+  const partes = texto.split(/\s+/u);
+  if (partes[0] === 'importar') {
+    const lista = texto.slice('importar'.length).trim();
+    return validarLista(lista, false, true, false) || 'Revisa los módulos que quieres importar y sepáralos con comas.';
+  }
+  if (partes[0] === 'desde') {
+    const modulo = partes[1] || '';
+    if (!esRutaModulo(modulo, true) || partes[2] !== 'importar') {
+      return "Usa 'desde módulo importar nombre'.";
+    }
+    const lista = partes.slice(3).join(' ');
+    return validarLista(lista, true, false, true) || 'Revisa los nombres que quieres importar y sepáralos con comas.';
+  }
+  return null;
+}
+
 function validar(documento, diagnosticos) {
   if (documento.languageId !== 'espanolcode') return;
 
@@ -173,7 +220,7 @@ function validar(documento, diagnosticos) {
   const bloques = [];
   let funcionActual = null;
   const nombreValido = /^[\p{L}_][\p{L}\p{N}_]*$/u;
-  const reservadas = new Set(['decir', 'guardar', 'preguntar', 'agregar', 'si', 'no', 'repetir', 'veces', 'funcion']);
+  const reservadas = new Set(['decir', 'guardar', 'preguntar', 'agregar', 'si', 'no', 'repetir', 'veces', 'funcion', 'importar', 'desde', 'como']);
 
   for (let indice = 0; indice < documento.lineCount; indice += 1) {
     const linea = documento.lineAt(indice);
@@ -244,6 +291,18 @@ function validar(documento, diagnosticos) {
     }
 
     while (bloques.length && bloques[bloques.length - 1].sangria >= sangria) bloques.pop();
+
+    if (/^(?:importar|desde)(?:\s|$)/u.test(texto)) {
+      const resultado = validarImportacion(texto);
+      encontrados.push(new vscode.Diagnostic(
+        linea.range,
+        resultado === true
+          ? 'La sintaxis de importación es válida, pero el intérprete todavía no carga módulos ni sus funciones.'
+          : resultado,
+        resultado === true ? vscode.DiagnosticSeverity.Warning : vscode.DiagnosticSeverity.Error
+      ));
+      continue;
+    }
 
     if (/^funcion(?:\s|$)/u.test(texto)) {
       const coincidencia = /^funcion\s+([\p{L}_][\p{L}\p{N}_]*)\s*\((.*?)\)\s*(?:=\s*(.*?))?\s*$/u.exec(texto);
