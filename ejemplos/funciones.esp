@@ -1,0 +1,37 @@
+funcion doble(numero) = numero * 2
+funcion saludo(nombre) = "Hola " + nombre
+funcion contar(elementos) = cantidad(elementos)
+funcion suma_doble(a, b) = doble(a + b)
+funcion bienvenida() = "Bienvenido"
+
+guardar area = "valor externo"
+funcion area_rectangulo(ancho, alto)
+    decir "Calculando el área"
+    guardar area = ancho * alto
+    devolver area
+
+funcion valor_absoluto(n)
+    si n < 0
+        devolver 0 - n
+    si no
+        devolver n
+
+funcion cuenta(n)
+    guardar total = 0
+    repetir n veces
+        guardar total = total + 1
+    devolver total
+
+guardar base = 5
+decir doble(base)
+decir saludo("Ana")
+decir contar(["sol", "luna", "mar"])
+decir suma_doble(2, 3)
+decir bienvenida()
+decir area_rectangulo(4, 3)
+decir area
+decir valor_absoluto(-5)
+decir cuenta(3)
+
+si doble(3) == 6
+    decir "La función también sirve en una condición"

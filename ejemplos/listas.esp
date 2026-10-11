@@ -1,0 +1,22 @@
+guardar frutas = ["manzana", "pera"]
+agregar frutas = "uva"
+decir frutas
+decir frutas[0]
+decir cantidad(frutas)
+decir cantidad("hola")
+si frutas == ["manzana", "pera", "uva"]
+    decir "Las listas también se pueden comparar"
+
+guardar combinada = frutas + ["kiwi"]
+decir combinada
+decir combinada[3]
+
+guardar matriz = [[1, 2], [3, 4]]
+decir matriz[1][0]
+
+guardar vacia = []
+agregar vacia = 42
+decir vacia
+
+si cantidad(frutas) >= 3
+    decir "La lista tiene al menos tres frutas"

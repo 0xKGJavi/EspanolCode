@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EspañolCode — bloques</title>
+  <style>
+    :root { color-scheme: dark; --fondo:#111827; --panel:#1f2937; --texto:#f9fafb; --suave:#cbd5e1; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--fondo); color:var(--texto); font:15px/1.45 system-ui,Segoe UI,sans-serif; }
+    header { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 22px; background:#0b1220; border-bottom:1px solid #334155; }
+    h1 { margin:0; font-size:20px; } header small { color:#94a3b8; }
+    button { color:inherit; background:#334155; border:1px solid #475569; padding:9px 13px; border-radius:9px; cursor:pointer; font-weight:650; }
+    button:hover { filter:brightness(1.15); }
+    .acciones { display:flex; gap:8px; flex-wrap:wrap; }
+    main { display:grid; grid-template-columns:220px minmax(320px,1fr) minmax(300px, .8fr); gap:14px; padding:14px; height:calc(100vh - 67px); }
+    .panel { background:var(--panel); border:1px solid #334155; border-radius:13px; overflow:auto; padding:13px; }
+    .panel h2 { margin:0 0 10px; font-size:15px; }
+    .nota { color:var(--suave); font-size:13px; margin:0 0 12px; }
+    .paleta { display:grid; gap:9px; }
+    .pieza { border:0; text-align:left; color:white; font-weight:700; box-shadow:0 3px 0 #0004; cursor:grab; user-select:none; }
+    .pieza:active { cursor:grabbing; }
+    .workspace { min-height:180px; border:2px dashed #475569; border-radius:12px; padding:12px; background:#111827; }
+    .stack { display:grid; gap:8px; min-height:100px; }
+    .bloque { color:white; border-radius:10px; padding:8px 10px 10px; box-shadow:0 3px 0 #0005; max-width:100%; }
+    .bloque.decir { background:#0f9f8f; } .bloque.guardar { background:#2563eb; }
+    .bloque.agregar { background:#4f46e5; } .bloque.repetir { background:#ea580c; }
+    .bloque.si { background:#d97706; } .bloque.funcion { background:#7c3aed; } .bloque.devolver { background:#9333ea; }
+    .bloque-top { display:flex; align-items:center; gap:7px; font-weight:750; }
+    .bloque-top .quitar { margin-left:auto; background:#0003; border:0; padding:2px 8px; }
+    input { width:145px; max-width:55vw; border:1px solid #ffffff70; border-radius:6px; padding:5px 7px; background:#fff; color:#111827; font:inherit; }
+    input.corto { width:85px; }
+    .cuerpo { margin:9px 0 0 14px; padding:8px; min-height:47px; border-left:3px solid #ffffff9c; background:#00000018; border-radius:0 8px 8px 0; }
+    .cuerpo::before { content:attr(data-label); display:block; font-size:11px; opacity:.8; margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+    .espacio-vacio { color:#94a3b8; padding:15px 8px; text-align:center; }
+    textarea { width:100%; min-height:210px; resize:vertical; border-radius:9px; border:1px solid #475569; padding:11px; background:#0b1220; color:#e2e8f0; font:13px/1.5 ui-monospace,Consolas,monospace; }
+    pre { min-height:100px; max-height:calc(100vh - 490px); overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; background:#0b1220; padding:11px; border-radius:9px; color:#bbf7d0; }
+    .estado { color:#94a3b8; font-size:12px; margin-top:8px; }
+    @media (max-width:950px) { main { height:auto; grid-template-columns:1fr; } .panel { max-height:none; } pre { max-height:300px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>EspañolCode <small>· bloques</small></h1><small>Programa con piezas, sin Python</small></div>
+    <div class="acciones"><button id="descargar">Descargar .esp</button><button id="ejecutar">▶ Ejecutar</button><button id="cerrar">Cerrar</button></div>
+  </header>
+  <main>
+    <section class="panel">
+      <h2>Piezas</h2><p class="nota">Arrastra una pieza al espacio. Para anidarla, suéltala dentro del hueco de una pieza naranja o amarilla.</p>
+      <div class="paleta">
+        <button class="pieza decir" draggable="true" data-tipo="decir">decir «Hola»</button>
+        <button class="pieza guardar" draggable="true" data-tipo="guardar">guardar variable = valor</button>
+        <button class="pieza agregar" draggable="true" data-tipo="agregar">agregar a una lista</button>
+        <button class="pieza repetir" draggable="true" data-tipo="repetir">repetir … veces</button>
+        <button class="pieza si" draggable="true" data-tipo="si">si / si no</button>
+        <button class="pieza funcion" draggable="true" data-tipo="funcion">funcion personalizada</button>
+        <button class="pieza devolver" draggable="true" data-tipo="devolver">devolver valor</button>
+      </div>
+      <p class="nota" style="margin-top:14px">Los campos aceptan expresiones EspañolCode. Para texto en guardar/agregar, escribe comillas, por ejemplo <code>"Ana"</code>.</p>
+    </section>
+    <section class="panel">
+      <h2>Mi programa</h2>
+      <div id="workspace" class="workspace"><div id="raiz" class="stack"></div></div>
+      <p class="nota">Puedes mover las piezas para cambiar el orden. Usa × para quitar una pieza.</p>
+    </section>
+    <section class="panel">
+      <h2>Código EspañolCode</h2>
+      <textarea id="codigo" spellcheck="false" readonly></textarea>
+      <h2 style="margin-top:15px">Resultado</h2>
+      <pre id="salida">Pulsa «Ejecutar» para probar el programa.</pre>
+      <div class="estado" id="estado">El ejecutable local interpretará el código.</div>
+    </section>
+  </main>
+<script>
+(() => {
+  const token = '__ESPANOLCODE_TOKEN__';
+  const raiz = document.getElementById('raiz');
+  const codigo = document.getElementById('codigo');
+  const salida = document.getElementById('salida');
+  const estado = document.getElementById('estado');
+  let arrastre = null;
+
+  function campo(valor, corto = false) {
+    const input = document.createElement('input');
+    input.value = valor;
+    input.className = corto ? 'corto' : '';
+    input.addEventListener('input', actualizar);
+    return input;
+  }
+  function hueco(etiqueta) {
+    const div = document.createElement('div');
+    div.className = 'cuerpo stack';
+    div.dataset.label = etiqueta;
+    div.addEventListener('dragover', permitirSoltar);
+    div.addEventListener('drop', soltar);
+    return div;
+  }
+  function botonQuitar(block) {
+    const quitar = document.createElement('button');
+    quitar.className = 'quitar'; quitar.textContent = '×'; quitar.title = 'Quitar pieza';
+    quitar.addEventListener('click', () => { block.remove(); actualizar(); });
+    return quitar;
+  }
+  function crear(t, existente) {
+    const b = existente || document.createElement('article');
+    b.className = `bloque ${t}`; b.dataset.tipo = t; b.draggable = true;
+    const top = document.createElement('div'); top.className = 'bloque-top';
+    const add = (nodo) => top.appendChild(nodo);
+    const etiqueta = (texto) => { const span = document.createElement('span'); span.textContent = texto; add(span); };
+    if (t === 'decir') { etiqueta('decir'); add(campo('Hola mundo')); }
+    if (t === 'guardar') { etiqueta('guardar'); add(campo('nombre', true)); etiqueta('='); add(campo('"Ana"')); }
+    if (t === 'agregar') { etiqueta('agregar'); add(campo('frutas', true)); etiqueta('='); add(campo('"pera"')); }
+    if (t === 'repetir') { etiqueta('repetir'); add(campo('3', true)); etiqueta('veces'); }
+    if (t === 'si') { etiqueta('si'); add(campo('1 == 1')); }
+    if (t === 'funcion') { etiqueta('funcion'); add(campo('mi_funcion', true)); etiqueta('('); add(campo('x', true)); etiqueta(')'); }
+    if (t === 'devolver') { etiqueta('devolver'); add(campo('0')); }
+    add(botonQuitar(b)); b.appendChild(top);
+    if (t === 'repetir') b.appendChild(hueco('hacer'));
+    if (t === 'si') { b.appendChild(hueco('hacer')); b.appendChild(hueco('si no')); }
+    if (t === 'funcion') { const cuerpo = hueco('bloque de la función'); cuerpo.appendChild(crear('devolver')); b.appendChild(cuerpo); }
+    return b;
+  }
+  function permitirSoltar(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+  function soltar(e) {
+    e.preventDefault();
+    const hueco = e.target.closest('.stack');
+    if (hueco !== e.currentTarget) return;
+    const bloqueExistente = document.querySelector('.bloque.arrastrando');
+    const tipo = bloqueExistente?.dataset.tipo || arrastre;
+    if (tipo === 'funcion' && hueco?.closest('.bloque.funcion')) {
+      document.querySelectorAll('.arrastrando').forEach(x => x.classList.remove('arrastrando'));
+      arrastre = null; return;
+    }
+    if (bloqueExistente && hueco && !bloqueExistente.contains(hueco)) hueco.appendChild(bloqueExistente);
+    else if (arrastre && hueco) hueco.appendChild(crear(arrastre));
+    document.querySelectorAll('.arrastrando').forEach(x => x.classList.remove('arrastrando'));
+    arrastre = null; actualizar();
+  }
+  document.querySelectorAll('.pieza').forEach(p => {
+    p.addEventListener('dragstart', e => { arrastre = p.dataset.tipo; e.dataTransfer.setData('text/plain', arrastre); });
+    p.addEventListener('click', () => { raiz.appendChild(crear(p.dataset.tipo)); actualizar(); });
+  });
+  raiz.addEventListener('dragover', permitirSoltar); raiz.addEventListener('drop', soltar);
+  document.addEventListener('dragstart', e => { const b = e.target.closest('.bloque'); if (b) { b.classList.add('arrastrando'); e.dataTransfer.setData('text/plain', 'mover'); } });
+  document.addEventListener('dragend', () => document.querySelectorAll('.arrastrando').forEach(x => x.classList.remove('arrastrando')));
+
+  function valor(b, indice) { return b.querySelectorAll('.bloque-top input')[indice]?.value.trim() || ''; }
+  function lineas(contenedor, nivel) {
+    return [...contenedor.children].filter(x => x.classList.contains('bloque')).map(b => generar(b, nivel)).join('\n');
+  }
+  function cuerpo(slot, nivel) { const r = lineas(slot, nivel); return r || '    '.repeat(nivel) + 'decir ""'; }
+  function generar(b, nivel) {
+    const sangria = '    '.repeat(nivel), t = b.dataset.tipo;
+    if (t === 'decir') return `${sangria}decir ${JSON.stringify(valor(b, 0))}`;
+    if (t === 'guardar') return `${sangria}guardar ${valor(b, 0) || 'nombre'} = ${valor(b, 1) || '0'}`;
+    if (t === 'agregar') return `${sangria}agregar ${valor(b, 0) || 'lista'} = ${valor(b, 1) || '0'}`;
+    if (t === 'devolver') return `${sangria}devolver ${valor(b, 0) || '0'}`;
+    if (t === 'repetir') return `${sangria}repetir ${valor(b, 0) || '0'} veces\n${cuerpo(b.querySelector('.cuerpo'), nivel + 1)}`;
+    if (t === 'si') {
+      const huecos = b.querySelectorAll('.cuerpo');
+      const principal = lineas(huecos[0], nivel + 1) || '    '.repeat(nivel + 1) + 'decir ""';
+      const alternativa = lineas(huecos[1], nivel + 1);
+      return `${sangria}si ${valor(b, 0) || '1 == 1'}\n${principal}${alternativa ? `\n${sangria}si no\n${alternativa}` : ''}`;
+    }
+    if (t === 'funcion') {
+      const cuerpo = lineas(b.querySelector('.cuerpo'), nivel + 1) || '    '.repeat(nivel + 1) + 'devolver 0';
+      return `${sangria}funcion ${valor(b, 0) || 'mi_funcion'}(${valor(b, 1) || 'x'})\n${cuerpo}`;
+    }
+    return '';
+  }
+  function actualizar() {
+    codigo.value = lineas(raiz, 0);
+    estado.textContent = `${raiz.querySelectorAll('.bloque').length} pieza(s) en el programa.`;
+  }
+  document.getElementById('descargar').addEventListener('click', () => {
+    const blob = new Blob([codigo.value + '\n'], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = 'programa.esp'; a.click(); URL.revokeObjectURL(url);
+  });
+  document.getElementById('ejecutar').addEventListener('click', async () => {
+    if (!codigo.value.trim()) { salida.textContent = 'Añade alguna pieza primero.'; return; }
+    estado.textContent = 'Ejecutando…';
+    try {
+      const r = await fetch('/run', {method:'POST', headers:{'Content-Type':'text/plain; charset=utf-8','X-EspanolCode-Token':token}, body:codigo.value});
+      const data = await r.json();
+      salida.textContent = [data.stdout, data.stderr].filter(Boolean).join('\n') || (data.ok ? '(sin salida)' : 'El programa terminó con error.');
+      estado.textContent = data.ok ? 'Ejecución terminada.' : `El programa informó un error (código ${data.code}).`;
+    } catch (e) { salida.textContent = String(e); estado.textContent = 'No se pudo conectar con EspañolCode.'; }
+  });
+  document.getElementById('cerrar').addEventListener('click', async () => {
+    try { await fetch('/shutdown', {method:'POST', headers:{'X-EspanolCode-Token':token}}); } catch (_) {}
+    document.body.innerHTML = '<main><section class="panel"><h1>Editor cerrado</h1><p>Ya puedes cerrar esta pestaña. El servidor del editor terminó.</p></section></main>';
+  });
+  raiz.appendChild(crear('decir')); actualizar();
+})();
+</script>
+</body>
+</html>

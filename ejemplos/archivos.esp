@@ -1,0 +1,4 @@
+escribir_archivo("salida-demo.txt", "Primera línea\n")
+agregar_archivo("salida-demo.txt", "Segunda línea\n")
+guardar contenido = leer_archivo("salida-demo.txt")
+decir contenido

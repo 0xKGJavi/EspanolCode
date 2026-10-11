@@ -1,0 +1,72 @@
+{
+  "name": "espanolcode-vscode",
+  "displayName": "EspañolCode",
+  "description": "Resaltado, comprobaciones y ejecución de archivos EspañolCode (.esp).",
+  "version": "0.12.0",
+  "publisher": "espanolcode",
+  "license": "MIT",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:espanolcode",
+    "onCommand:espanolcode.ejecutarArchivo"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "espanolcode",
+        "aliases": [
+          "EspañolCode",
+          "espanolcode"
+        ],
+        "extensions": [
+          ".esp"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "espanolcode",
+        "scopeName": "source.espanolcode",
+        "path": "./syntaxes/espanolcode.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "espanolcode.ejecutarArchivo",
+        "title": "EspañolCode: Ejecutar archivo actual",
+        "category": "EspañolCode"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "espanolcode.ejecutarArchivo",
+        "key": "ctrl+alt+r",
+        "when": "editorLangId == espanolcode"
+      }
+    ],
+    "configuration": {
+      "title": "EspañolCode",
+      "properties": {
+        "espanolcode.rutaEjecutable": {
+          "type": "string",
+          "default": "espanolcode",
+          "description": "Ruta del ejecutable EspañolCode. Si el comando está en PATH, deja el valor predeterminado."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.2.2"
+  }
+}

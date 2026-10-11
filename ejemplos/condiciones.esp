@@ -1,0 +1,27 @@
+guardar edad = 20
+si edad >= 18
+    decir "Eres mayor de edad"
+si no
+    decir "Eres menor de edad"
+
+guardar nombre = "Ana"
+si nombre == "Ana"
+    decir "Hola Ana"
+si edad != 21
+    decir "La edad no es 21"
+si edad > 18
+    decir "La edad supera 18"
+si edad <= 20
+    decir "La edad es como máximo 20"
+
+guardar edad = 12
+si edad >= 18
+    decir "Eres mayor de edad"
+si no
+    decir "Eres menor de edad"
+
+si edad < 18
+    si edad >= 13
+        decir "Eres adolescente"
+    si no
+        decir "Eres menor"

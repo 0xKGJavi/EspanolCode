@@ -1,0 +1,8 @@
+decir absoluto(-7)
+decir redondear(3.6)
+decir minimo([8, 3, 5])
+decir maximo(8, 3)
+guardar numero = 7
+decir numero
+guardar edad = numero("12")
+decir texto(edad + 1)

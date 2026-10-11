@@ -1,0 +1,15 @@
+repetir 5 veces
+    decir "Hola"
+
+guardar contador = 0
+repetir 3 veces
+    guardar contador = contador + 1
+decir contador
+
+guardar vueltas = 1 + 1
+repetir vueltas veces
+    repetir 2 veces
+        decir "Bucle interno"
+
+repetir 0 veces
+    decir "Este texto no aparece"

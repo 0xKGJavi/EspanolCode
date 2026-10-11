@@ -1,0 +1,4 @@
+guardar precio = 12
+guardar cantidad = 3
+guardar total = precio * cantidad + 5
+decir total

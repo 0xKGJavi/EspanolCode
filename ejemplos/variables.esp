@@ -1,0 +1,8 @@
+guardar nombre = "Carlos"
+decir nombre
+
+guardar edad = 18
+decir edad
+
+guardar nombre = "Ana"
+decir nombre

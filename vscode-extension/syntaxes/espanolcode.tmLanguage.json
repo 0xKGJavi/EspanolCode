@@ -1,0 +1,49 @@
+{
+  "scopeName": "source.espanolcode",
+  "patterns": [
+    { "include": "#strings" },
+    { "include": "#keywords" },
+    { "include": "#functions" },
+    { "include": "#numbers" },
+    { "include": "#operators" },
+    { "include": "#punctuation" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "strings": {
+      "name": "string.quoted.double.espanolcode",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.espanolcode",
+          "match": "\\\\(?:\\\\|\"|n|t)"
+        }
+      ]
+    },
+    "keywords": {
+      "name": "keyword.control.espanolcode",
+      "match": "\\b(?:decir|guardar|preguntar|agregar|si|no|repetir|veces|funcion|devolver|verdadero|falso)\\b"
+    },
+    "functions": {
+      "name": "entity.name.function.espanolcode",
+      "match": "\\b[a-zA-Z_áéíóúüñÁÉÍÓÚÜÑ][\\wáéíóúüñÁÉÍÓÚÜÑ]*(?=\\s*\\()"
+    },
+    "numbers": {
+      "name": "constant.numeric.espanolcode",
+      "match": "\\b\\d+(?:\\.\\d+)?\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.espanolcode",
+      "match": "(?:==|!=|<=|>=|[=+*/<>-])"
+    },
+    "punctuation": {
+      "name": "punctuation.section.list.espanolcode",
+      "match": "[\\[\\](),]"
+    },
+    "identifiers": {
+      "name": "variable.other.espanolcode",
+      "match": "\\b[a-zA-Z_áéíóúüñÁÉÍÓÚÜÑ][\\wáéíóúüñÁÉÍÓÚÜÑ]*\\b"
+    }
+  }
+}

@@ -1,0 +1,2 @@
+guardar nombre = preguntar "¿Cómo te llamas? "
+decir nombre

@@ -1,0 +1,9 @@
+[package]
+name = "espanolcode"
+version = "0.12.0"
+edition = "2021"
+description = "Intérprete nativo y sencillo para EspañolCode"
+
+[[bin]]
+name = "espanolcode"
+path = "src/main.rs"
