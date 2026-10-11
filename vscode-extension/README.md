@@ -2,6 +2,8 @@
 
 La extensión reconoce archivos `.esp`, colorea palabras reservadas y texto, muestra advertencias/errores básicos y ejecuta el programa en la terminal integrada de VS Code, para que puedas responder a preguntas interactivas. Incluye el logotipo EspañolCode.
 
+Si usas Windows, el instalador de EspañolCode puede instalar esta extensión por ti (casilla **Instalar la extensión de EspañolCode en Visual Studio Code**).
+
 ## Instalar para probar mientras desarrollas
 
 1. Instala Visual Studio Code y el ejecutable EspañolCode.

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="2">
+    <title>EspañolCode</title>
+    <welcome file="bienvenida.html" mime-type="text/html"/>
+    <conclusion file="conclusion.html" mime-type="text/html"/>
+    <options customize="never" require-scripts="false" hostArchitectures="x86_64,arm64"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <choices-outline>
+        <line choice="default">
+            <line choice="io.github.0xkgjavi.espanolcode"/>
+        </line>
+    </choices-outline>
+    <choice id="default"/>
+    <choice id="io.github.0xkgjavi.espanolcode" visible="false">
+        <pkg-ref id="io.github.0xkgjavi.espanolcode"/>
+    </choice>
+    <pkg-ref id="io.github.0xkgjavi.espanolcode" version="__VERSION__" onConclusion="none">espanolcode.pkg</pkg-ref>
+</installer-gui-script>

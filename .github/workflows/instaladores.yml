@@ -1,0 +1,180 @@
+name: Instaladores
+
+# Fabrica e instala de prueba los instaladores de Windows, Linux y macOS en cada cambio.
+# Al publicar una release con etiqueta vX.Y.Z (igual a la versión de Cargo.toml),
+# además los sube a esa release. Ver "Publicar una versión nueva" en el README.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  version:
+    name: Comprobar versión
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.leer.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: leer
+        env:
+          ETIQUETA: ${{ github.event.release.tag_name }}
+        run: echo "version=$(sh instaladores/comprobar-version.sh "$ETIQUETA")" >> "$GITHUB_OUTPUT"
+
+  windows:
+    name: Windows
+    needs: version
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compilar EspañolCode
+        run: cargo build --release --locked
+      - name: Empaquetar la extensión de VS Code
+        working-directory: vscode-extension
+        run: npx --yes @vscode/vsce@4.0.0 package --allow-missing-repository -o ../target/espanolcode.vsix
+      - name: Crear el instalador
+        run: |
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc "/DVersion=$env:VERSION" instaladores\windows\espanolcode.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Probar el instalador (solo para mí)
+        run: .\instaladores\windows\probar-instalador.ps1 -Instalador "dist\EspanolCode-$env:VERSION-windows.exe" -Version $env:VERSION -Modo usuario
+      - name: Probar el instalador (para todos los usuarios)
+        run: .\instaladores\windows\probar-instalador.ps1 -Instalador "dist\EspanolCode-$env:VERSION-windows.exe" -Version $env:VERSION -Modo todos
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows
+          path: dist/EspanolCode-*-windows.exe
+          if-no-files-found: error
+
+  linux:
+    name: Linux (compilar y empaquetar)
+    needs: version
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      NFPM_VERSION: 2.47.0
+      NFPM_SHA256: 0660ca602b2d2d2ae4781a06c692b3eeb9d437ffea05b831d76e41f4a3188783
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compilar EspañolCode (binario estático)
+        run: |
+          rustup target add x86_64-unknown-linux-musl
+          cargo build --release --locked --target x86_64-unknown-linux-musl
+      - name: Instalar nfpm
+        run: |
+          curl -fsSLo nfpm.tar.gz "https://github.com/goreleaser/nfpm/releases/download/v${NFPM_VERSION}/nfpm_${NFPM_VERSION}_Linux_x86_64.tar.gz"
+          echo "${NFPM_SHA256}  nfpm.tar.gz" | sha256sum -c -
+          tar -xzf nfpm.tar.gz nfpm
+          sudo install -m 755 nfpm /usr/local/bin/nfpm
+      - name: Crear paquetes .deb y .rpm
+        run: |
+          mkdir -p dist
+          nfpm package -f instaladores/linux/nfpm.yaml -p deb -t dist/
+          nfpm package -f instaladores/linux/nfpm.yaml -p rpm -t dist/
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: linux
+          path: |
+            dist/*.deb
+            dist/*.rpm
+          if-no-files-found: error
+
+  linux-prueba-deb:
+    name: Probar .deb (Ubuntu)
+    needs: [version, linux]
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: linux
+          path: dist
+      - name: Instalar, probar y desinstalar
+        run: |
+          sudo apt-get install -y "./dist/espanolcode_${VERSION}_amd64.deb"
+          sh instaladores/probar-comando.sh /usr/share/doc/espanolcode/ejemplos "$VERSION"
+          sudo apt-get remove -y espanolcode
+          hash -r
+          if command -v espanolcode; then echo "::error::espanolcode sigue instalado"; exit 1; fi
+
+  linux-prueba-rpm:
+    name: Probar .rpm (Fedora)
+    needs: [version, linux]
+    runs-on: ubuntu-latest
+    container: fedora:44
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: linux
+          path: dist
+      - name: Instalar, probar y desinstalar
+        run: |
+          dnf install -y "./dist/espanolcode-${VERSION}-1.x86_64.rpm"
+          sh instaladores/probar-comando.sh /usr/share/doc/espanolcode/ejemplos "$VERSION"
+          dnf remove -y espanolcode
+          hash -r
+          if command -v espanolcode; then echo "::error::espanolcode sigue instalado"; exit 1; fi
+
+  macos:
+    name: macOS
+    needs: version
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Compilar EspañolCode (Intel y Apple Silicon)
+        run: |
+          rustup target add x86_64-apple-darwin aarch64-apple-darwin
+          cargo build --release --locked --target x86_64-apple-darwin
+          cargo build --release --locked --target aarch64-apple-darwin
+      - name: Crear el instalador .pkg
+        run: sh instaladores/macos/construir-pkg.sh "$VERSION"
+      - name: Instalar y probar
+        run: |
+          sudo installer -pkg "dist/EspanolCode-${VERSION}-macos.pkg" -target /
+          sh instaladores/probar-comando.sh /usr/local/share/espanolcode/ejemplos "$VERSION"
+          lipo -archs /usr/local/bin/espanolcode | grep -q x86_64
+          lipo -archs /usr/local/bin/espanolcode | grep -q arm64
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos
+          path: dist/EspanolCode-*-macos.pkg
+          if-no-files-found: error
+
+  publicar:
+    name: Subir a la release
+    if: github.event_name == 'release'
+    needs: [windows, linux-prueba-deb, linux-prueba-rpm, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Subir los instaladores
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ETIQUETA: ${{ github.event.release.tag_name }}
+          REPO: ${{ github.repository }}
+        run: gh release upload "$ETIQUETA" dist/* --clobber --repo "$REPO"
