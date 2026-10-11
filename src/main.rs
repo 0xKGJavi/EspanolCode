@@ -1486,11 +1486,12 @@ fn responder_http(
     stream.write_all(contenido)
 }
 
-fn leer_peticion(stream: &mut TcpStream) -> io::Result<(String, String, String, Vec<u8>)> {
+fn leer_peticion(stream: &mut TcpStream) -> io::Result<(String, String, String, String, Vec<u8>)> {
     let mut datos = Vec::new();
     let mut fragmento = [0u8; 4096];
     let mut fin_cabecera = None;
     let mut largo_cuerpo = 0usize;
+    let mut host = String::new();
     let mut token = String::new();
     loop {
         let leidos = stream.read(&mut fragmento)?;
@@ -1513,6 +1514,8 @@ fn leer_peticion(stream: &mut TcpStream) -> io::Result<(String, String, String, 
                             largo_cuerpo = valor.trim().parse::<usize>().unwrap_or(0);
                         } else if nombre.eq_ignore_ascii_case("x-espanolcode-token") {
                             token = valor.trim().to_string();
+                        } else if nombre.eq_ignore_ascii_case("host") {
+                            host = valor.trim().to_string();
                         }
                     }
                 }
@@ -1548,7 +1551,7 @@ fn leer_peticion(stream: &mut TcpStream) -> io::Result<(String, String, String, 
     let ruta = partes.next().unwrap_or_default().to_string();
     let inicio = fin + 4;
     let cuerpo = datos[inicio..inicio + largo_cuerpo].to_vec();
-    Ok((metodo, ruta, token, cuerpo))
+    Ok((metodo, ruta, host, token, cuerpo))
 }
 
 fn ejecutar_codigo_bloques(codigo: &str) -> (bool, i32, String, String) {
@@ -1593,8 +1596,18 @@ fn ejecutar_codigo_bloques(codigo: &str) -> (bool, i32, String, String) {
     }
 }
 
-fn atender_peticion(stream: &mut TcpStream, token_sesion: &str) -> io::Result<bool> {
-    let (metodo, ruta, token, cuerpo) = match leer_peticion(stream) {
+/// Solo acepta peticiones dirigidas al propio ordenador y al puerto del editor.
+/// Así una web ajena no puede leer el editor (ni su token) mediante DNS rebinding.
+fn host_permitido(host: &str, puerto: u16) -> bool {
+    let Some((nombre, puerto_host)) = host.trim().rsplit_once(':') else {
+        return false;
+    };
+    puerto_host.parse::<u16>() == Ok(puerto)
+        && (nombre == "127.0.0.1" || nombre.eq_ignore_ascii_case("localhost"))
+}
+
+fn atender_peticion(stream: &mut TcpStream, token_sesion: &str, puerto: u16) -> io::Result<bool> {
+    let (metodo, ruta, host, token, cuerpo) = match leer_peticion(stream) {
         Ok(peticion) => peticion,
         Err(error) => {
             responder_http(
@@ -1606,6 +1619,15 @@ fn atender_peticion(stream: &mut TcpStream, token_sesion: &str) -> io::Result<bo
             return Ok(true);
         }
     };
+    if !host_permitido(&host, puerto) {
+        responder_http(
+            stream,
+            "403 Forbidden",
+            "text/plain; charset=utf-8",
+            "Dirección no permitida".as_bytes(),
+        )?;
+        return Ok(true);
+    }
     if metodo == "POST" && token != token_sesion {
         responder_http(
             stream,
@@ -1697,7 +1719,7 @@ fn iniciar_editor_bloques() -> Result<(), String> {
     println!("Elige 'Cerrar' en el editor o pulsa Ctrl+C para salir.");
     for peticion in servidor.incoming() {
         match peticion {
-            Ok(mut stream) => match atender_peticion(&mut stream, &token) {
+            Ok(mut stream) => match atender_peticion(&mut stream, &token, direccion.port()) {
                 Ok(true) => {}
                 Ok(false) => break,
                 Err(error) => eprintln!("Error del editor de bloques: {error}"),
@@ -1730,5 +1752,38 @@ fn main() {
     if let Err(error) = ejecutar() {
         mostrar_error(&error);
         process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod pruebas {
+    use super::host_permitido;
+
+    #[test]
+    fn acepta_el_propio_ordenador_con_su_puerto() {
+        assert!(host_permitido("127.0.0.1:5000", 5000));
+        assert!(host_permitido("localhost:5000", 5000));
+        assert!(host_permitido("LocalHost:5000", 5000));
+        assert!(host_permitido(" 127.0.0.1:5000 ", 5000));
+    }
+
+    #[test]
+    fn rechaza_otro_puerto() {
+        assert!(!host_permitido("127.0.0.1:5001", 5000));
+        assert!(!host_permitido("127.0.0.1:abc", 5000));
+    }
+
+    #[test]
+    fn rechaza_dominios_ajenos_aunque_apunten_al_ordenador() {
+        assert!(!host_permitido("web-trampa.com:5000", 5000));
+        assert!(!host_permitido("127.0.0.1.web-trampa.com:5000", 5000));
+        assert!(!host_permitido("localhost.web-trampa.com:5000", 5000));
+    }
+
+    #[test]
+    fn rechaza_cabecera_vacia_o_sin_puerto() {
+        assert!(!host_permitido("", 5000));
+        assert!(!host_permitido("127.0.0.1", 5000));
+        assert!(!host_permitido("localhost", 5000));
     }
 }
