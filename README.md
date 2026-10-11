@@ -4,6 +4,43 @@
 
 EspañolCode es un lenguaje de programación pequeño e independiente: escribes instrucciones en español en un archivo `.esp` y el programa EspañolCode las ejecuta. Esta versión entiende `decir`, variables con `guardar`, preguntas con `preguntar`, operaciones matemáticas, condiciones, repeticiones, listas, archivos de texto, funciones propias por expresión o bloques indentados, un editor visual de bloques estilo Scratch y algunas funciones útiles en español. No necesita Python.
 
+## Instalar
+
+Descarga el instalador de tu sistema desde [Releases](https://github.com/0xKGJavi/EspanolCode/releases/latest). No necesitas Rust, Python ni nada más.
+
+### Windows
+
+1. Descarga `EspanolCode-X.Y.Z-windows.exe` y ábrelo.
+2. Si aparece **"Windows protegió su PC"**, pulsa **Más información** y después **Ejecutar de todas formas**. Sale porque el instalador no está firmado con un certificado de pago, no porque tenga nada malo.
+3. Sigue el asistente: **Siguiente**, elige las opciones e **Instalar**.
+
+Después puedes escribir `espanolcode` en cualquier terminal nueva, hacer **doble clic** en un archivo `.esp` para ejecutarlo y abrir la consola o los ejemplos desde el menú Inicio. Para cambiar un `.esp`: clic derecho > **Editar** (en Windows 11 está dentro de **Mostrar más opciones**) o **Abrir con > Bloc de notas**.
+
+Los mods de Skyrim y Fallout también usan archivos `.esp`. Si los usas, desmarca la opción de ejecutar `.esp` con doble clic al instalar.
+
+Para desinstalar: menú Inicio > **Desinstalar EspañolCode**, o en **Configuración > Aplicaciones > Aplicaciones instaladas** busca EspañolCode y pulsa **Desinstalar**.
+
+### Linux
+
+- **Ubuntu, Debian, Mint:** descarga `espanolcode_X.Y.Z_amd64.deb`. Ábrelo con doble clic o, en una terminal en la carpeta de descargas, ejecuta `sudo apt install ./espanolcode_X.Y.Z_amd64.deb`.
+- **Fedora:** descarga `espanolcode-X.Y.Z-1.x86_64.rpm` y ejecuta `sudo dnf install ./espanolcode-X.Y.Z-1.x86_64.rpm`.
+
+Los ejemplos quedan en `/usr/share/doc/espanolcode/ejemplos`. Para desinstalar: `sudo apt remove espanolcode` o `sudo dnf remove espanolcode`.
+
+### macOS
+
+1. Descarga `EspanolCode-X.Y.Z-macos.pkg` y ábrelo.
+2. La primera vez macOS lo bloquea porque el instalador no está firmado por Apple. Ve a **Ajustes del Sistema > Privacidad y seguridad**, busca el aviso de EspañolCode y pulsa **Abrir igualmente**.
+3. Sigue el asistente.
+
+Funciona en Macs con Intel y con Apple Silicon (M1, M2…). Los ejemplos quedan en `/usr/local/share/espanolcode/ejemplos`. Para desinstalar, en la Terminal:
+
+```sh
+sudo rm /usr/local/bin/espanolcode
+sudo rm -rf /usr/local/share/espanolcode
+sudo pkgutil --forget io.github.0xkgjavi.espanolcode
+```
+
 ## Prueba rápida
 
 El programa de ejemplo está en `ejemplos/hola.esp` y contiene:
@@ -12,7 +49,7 @@ El programa de ejemplo está en `ejemplos/hola.esp` y contiene:
 decir "Hola mundo"
 ```
 
-Tras compilar e instalarlo, abre una **terminal** (la ventana donde escribes comandos) y ejecuta:
+Tras instalarlo, abre una **terminal** (la ventana donde escribes comandos) en la carpeta que contiene `ejemplos` (la de este proyecto, o la que indica **Instalar** si usaste el instalador) y ejecuta:
 
 ```text
 espanolcode ejemplos/hola.esp
@@ -145,20 +182,6 @@ decir cantidad(nombres)
 
 También puedes usar listas vacías, listas dentro de listas y unir listas con `+`. Prueba `espanolcode ejemplos/listas.esp`.
 
-## Importaciones de módulos
-
-EspañolCode reconoce la sintaxis española para las formas habituales de importación:
-
-```text
-importar math como matematicas
-importar random, statistics
-desde math importar sqrt como raiz
-desde paquete.subpaquete importar (una, dos)
-desde .utilidades importar ayuda
-```
-
-Puedes escribir nombres de módulos y elementos en español o conservar los nombres habituales de Python; `como` permite indicar un alias en cada importación. Por ahora no hay un catálogo que traduzca automáticamente los nombres de todos los módulos estándar. Se valida únicamente la sintaxis: EspañolCode no carga módulos de Python ni hace disponibles sus funciones o nombres importados. Al ejecutar una importación muestra un aviso para dejar clara esta limitación. Esto no requiere instalar Python.
-
 ## Leer y escribir archivos de texto
 
 `leer_archivo(ruta)` lee el texto de un archivo. `escribir_archivo(ruta, texto)` crea o reemplaza un archivo; `agregar_archivo(ruta, texto)` añade texto al final.
@@ -174,9 +197,9 @@ Las rutas relativas se resuelven desde la carpeta de la terminal donde ejecutas 
 
 También puedes abrir el modo interactivo escribiendo `espanolcode`. Prueba `decir "Hola mundo"` o guarda una variable. Para salir, escribe `salir`.
 
-## Compilar en Windows
+## Compilar tú mismo en Windows
 
-Compilar convierte el código fuente de este proyecto en un programa ejecutable. Para compilar hace falta instalar Rust una vez en el ordenador de quien construye el proyecto. La persona que use el ejecutable instalado **no necesita Python ni Rust**.
+Solo hace falta si quieres construirlo desde el código; para usarlo, mira **Instalar**. Compilar convierte el código fuente de este proyecto en un programa ejecutable. Para compilar hace falta instalar Rust una vez en el ordenador de quien construye el proyecto. La persona que use el ejecutable instalado **no necesita Python ni Rust**.
 
 1. Instala Rust desde <https://rustup.rs/> (solo para compilar).
 2. Abre PowerShell en la carpeta de este proyecto.
@@ -201,7 +224,7 @@ Compilar convierte el código fuente de este proyecto en un programa ejecutable.
 
 El instalador copia `espanolcode.exe` a la carpeta de programas de tu cuenta y añade esa carpeta al `PATH` del usuario. `PATH` es la lista de carpetas donde Windows busca comandos; por eso luego puedes escribir `espanolcode` desde cualquier carpeta. Windows permite asociar `.esp` a un programa, pero no hace falta asociación para ejecutar un archivo: el comando `espanolcode archivo.esp` es más claro y funciona desde la terminal.
 
-## Linux y macOS
+## Compilar tú mismo en Linux y macOS
 
 Instala Rust en el ordenador que vaya a compilar (<https://rustup.rs/>), abre una terminal en la carpeta del proyecto y ejecuta:
 
@@ -212,7 +235,7 @@ sh instaladores/instalar-unix.sh
 
 El instalador copia el ejecutable a `~/.local/bin`. Si indica que esa carpeta no está en `PATH`, sigue el mensaje que imprime y abre una terminal nueva. Después prueba `espanolcode ejemplos/hola.esp`.
 
-Para distribuirlo a otras personas sin Rust, compila una vez para cada sistema operativo y entrega el ejecutable compilado junto con el instalador correspondiente. Este proyecto todavía no genera instaladores gráficos (`.msi`, `.dmg` o paquetes de Linux); el script de Windows sí instala el comando para la cuenta actual.
+Para repartirlo a otras personas no hace falta compilar a mano: GitHub fabrica los instaladores de la sección **Instalar** (mira **Publicar una versión nueva**).
 
 ## Escribir tu propio archivo
 
@@ -235,7 +258,7 @@ El proyecto incluye una extensión para reconocer archivos `.esp`, colorear inst
 
 1. Instala Visual Studio Code.
 2. Instala EspañolCode siguiendo los pasos de Windows o Linux/macOS anteriores. La extensión necesita que el comando `espanolcode` funcione en una terminal.
-3. Instala la extensión desde la carpeta `vscode-extension` siguiendo [sus instrucciones](vscode-extension/README.md).
+3. Instala la extensión. En Windows, el instalador lo hace por ti si marcas su casilla; si no, instálala desde la carpeta `vscode-extension` siguiendo [sus instrucciones](vscode-extension/README.md).
 4. Abre cualquier archivo `.esp`. El código se muestra con colores. Para ejecutarlo, pulsa **Ctrl+Alt+R**; el programa se abre en la terminal integrada, donde también puedes responder a `preguntar`.
 
 La extensión también lleva el logotipo, reconoce variables, preguntas, condiciones, repeticiones, listas, funciones sencillas y operaciones con archivos, y señala errores básicos. Las futuras palabras del lenguaje se colorean, pero aún no se pueden ejecutar.
@@ -251,9 +274,20 @@ La extensión también lleva el logotipo, reconoce variables, preguntas, condici
 - Listas con `[...]`, índices como `nombres[0]`, `agregar` y `cantidad(...)`.
 - `leer_archivo`, `escribir_archivo` y `agregar_archivo` — lectura y escritura sencilla de texto.
 - `funcion nombre(parámetros) = expresión` o funciones por bloques con variables locales, `devolver`, `si`/`si no` y `repetir`.
-- `importar` y `desde ... importar ...` — reconocen la sintaxis de imports, pero todavía no cargan los módulos ni sus funciones.
 - Funciones útiles: `cantidad`, `absoluto`, `redondear`, `minimo`, `maximo`, `texto` y `numero`.
 - `espanolcode --bloques` — abre el editor visual de piezas; permite arrastrar, descargar `.esp` y ejecutar.
 - Siguiente: funciones anidadas y ampliar los bloques visuales; no incluye los sprites, disfraces ni audio de Scratch.
 
 Esto no copia todas las bibliotecas especializadas de Python; traduce gradualmente las ideas comunes para principiantes.
+
+## Publicar una versión nueva
+
+Los instaladores se fabrican solos con GitHub Actions (`.github/workflows/instaladores.yml`). Para sacar una versión:
+
+1. Cambia `version` en `Cargo.toml` (por ejemplo, a `0.13.0`) y sube el cambio.
+2. En GitHub, en **Releases**, crea una release nueva con la etiqueta `v0.13.0` (la misma versión con una `v` delante) y publícala.
+3. En unos 10 minutos aparecen en esa release los instaladores de Windows, Linux y macOS.
+
+Si la etiqueta no coincide con `Cargo.toml`, GitHub avisa del error y no sube nada. Además, en cada cambio y en cada pull request se fabrican e instalan de prueba en Windows, Ubuntu, Fedora y macOS (pestaña **Actions**).
+
+Los instaladores se configuran en `instaladores/windows/espanolcode.iss` (Inno Setup), `instaladores/linux/nfpm.yaml` e `instaladores/macos/`. Los scripts `instaladores/instalar-windows.ps1` e `instalar-unix.sh` siguen sirviendo para instalar lo que compilas tú mismo.
